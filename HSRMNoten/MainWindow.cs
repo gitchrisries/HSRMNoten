@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using HSRMNoten.Classes;
+using Microsoft.Win32;
 
 namespace HSRMNoten
 {
@@ -20,21 +21,28 @@ namespace HSRMNoten
         int i = 0;
         int rowCount;
         bool begin;
-        public MainWindow(List<List<string>> list, string user, string pw)
+        bool dual;
+        bool firefox;
+
+        public MainWindow(List<List<string>> list, string user, string pw, bool dual, bool firefox)
         {
             this.list = list;
             this.user = user;
             this.pw = pw;
+            this.dual = dual;
+            this.firefox = firefox;
+            SystemEvents.PowerModeChanged += SystemEvents_PowerModeChanged;
             InitializeComponent();           
         }
 
         private void Form1_Load(object sender, EventArgs e)
         {       
-            dataGridView1.ColumnCount = 3;
-            dataGridView1.Columns[0].Name = "Modul";
-            dataGridView1.Columns[1].Name = "Note";
-            dataGridView1.Columns[2].Name = "Credit Points";
-            tbSetTimer.Text = (timer1.Interval / 1000).ToString();
+            dataGridView.ColumnCount = 3;
+            dataGridView.Columns[0].Name = "Modul";
+            dataGridView.Columns[1].Name = "Note";
+            dataGridView.Columns[2].Name = "Credit Points";
+            tbSetTimer.Text = (timer1.Interval / 60000).ToString();
+            btnSetTimer.Enabled = false;
             fillList();
         }
 
@@ -57,38 +65,41 @@ namespace HSRMNoten
                     row[1] = l[4];
                     row[2] = l[6];
                 }
-                dataGridView1.Rows.Add(row); 
+                dataGridView.Rows.Add(row); 
             }
+            dataGridView.Rows[0].Cells[0].Selected = false;
 
-            rowCount = dataGridView1.Rows.Count;
+            rowCount = dataGridView.Rows.Count;
 
-            foreach (DataGridViewRow item in dataGridView1.Rows)
+            foreach (DataGridViewRow item in dataGridView.Rows)
             {
                 if (item.Cells[1].Value != null && !item.Cells[1].Value.ToString().Any(char.IsDigit) 
                     && !item.Cells[1].Value.ToString().Equals(""))
                 {
-                    item.DefaultCellStyle.BackColor = Color.Yellow;
+                    item.DefaultCellStyle.BackColor = Color.LightBlue;
                 }
+
             }
 
-            dataGridView1.Rows[dataGridView1.Rows.Count - 2].DefaultCellStyle.BackColor = Color.Beige;
-            lblTimer.Text = "Loaded " + i + " times";
-            this.dataGridView1.BackgroundColor = System.Drawing.SystemColors.ActiveCaption;
+            dataGridView.Rows[dataGridView.Rows.Count - 1].DefaultCellStyle.BackColor = Color.Beige;
+            lblTimer.Text = "Refresh Counter: " + i;
             lblLoading.Visible = false;
 
         }
 
 
         private void btnRefresh_Click(object sender, EventArgs e)
-        {
-            refresh();          
+        {          
+            lblLoading.Visible = true;
+            i++;
+            refresh();
         }
 
         private void refresh()
         {
-            dataGridView1.Rows.Clear();
-            list = ReadHTML.parseTable(ReadHTML.navigateToGrades(user, pw));
-            
+            dataGridView.Rows.Clear();
+            list = firefox ? ReadHTML.parseTable(ReadHTML.navigateToGradesFirefox(user, pw, dual)) : ReadHTML.parseTable(ReadHTML.navigateToGradesChrome(user, pw, dual));
+  
             if (begin)
             {
                 rowCount = list.Count;
@@ -99,6 +110,7 @@ namespace HSRMNoten
             {
                 MessageBox.Show("Eine neue Note wurde eingetragen.", "Neue Note",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1, MessageBoxOptions.DefaultDesktopOnly);
+                begin = true;
             }
 
             fillList();
@@ -110,21 +122,6 @@ namespace HSRMNoten
         }
 
 
-        private void MainWindow_Resize(object sender, EventArgs e)
-        {
-  
-            if (this.WindowState == FormWindowState.Minimized)
-            {
-                Hide();
-            }
-        }
-
-        private void notifyIcon_MouseDoubleClick_1(object sender, MouseEventArgs e)
-        {
-            Show();
-            this.WindowState = FormWindowState.Normal;
-        }
-
         private void timer1_Tick(object sender, EventArgs e)
         {            
             i++;          
@@ -133,20 +130,60 @@ namespace HSRMNoten
 
         private void timer2_Tick(object sender, EventArgs e)
         {
-            this.dataGridView1.BackgroundColor = Color.DarkGray;
             lblLoading.Visible = true;
         }
 
         private void btnSetTimer_Click(object sender, EventArgs e)
         {
-            if (Int32.Parse(tbSetTimer.Text) < 10)
+            if (tbSetTimer.Text.Equals("") || Int32.Parse(tbSetTimer.Text) < 5)
             {
-                tbSetTimer.Text = "10";
+                tbSetTimer.Text = "5";
+                timer1.Interval = Int32.Parse(tbSetTimer.Text) * 60000;
+                timer2.Interval = Int32.Parse(tbSetTimer.Text) * 60000;
+                MessageBox.Show("Minimale Refresh Time ist 5 Minuten.", "Achtung");
                 return;
             }
+
+            btnSetTimer.Enabled = false;
             
-            timer1.Interval = Int32.Parse(tbSetTimer.Text) * 1000;
-            timer2.Interval = Int32.Parse(tbSetTimer.Text) * 1000;
+            timer1.Interval = Int32.Parse(tbSetTimer.Text) * 60000;
+            timer2.Interval = Int32.Parse(tbSetTimer.Text) * 60000;
+        }
+
+
+        private void MainWindow_Resize(object sender, EventArgs e)
+        {
+            if (this.WindowState == FormWindowState.Minimized && cbTray.Checked)
+            {
+                Hide();
+                notifyIcon.Visible = true;
+            }
+        }
+
+        private void tbSetTimer_TextChanged(object sender, EventArgs e)
+        {
+            btnSetTimer.Enabled = true;
+        }
+
+        private void notifyIcon_MouseClick(object sender, MouseEventArgs e)
+        {
+            Show();
+            this.WindowState = FormWindowState.Normal;
+            notifyIcon.Visible = false;
+        }
+
+        void SystemEvents_PowerModeChanged(object sender, PowerModeChangedEventArgs e)
+        {
+            if (e.Mode == PowerModes.Suspend)
+            {
+                timer1.Stop();
+                timer2.Stop();
+            }
+            else if (e.Mode == PowerModes.Resume)
+            {
+                timer1.Start();
+                timer2.Start();
+            }
         }
     }
 }

@@ -15,7 +15,7 @@ namespace HSRMNoten
     public partial class Start : Form
     {
 
-        string path = Environment.CurrentDirectory + "\\data.txt";
+        string path = Environment.CurrentDirectory + "\\userdata.txt";
 
         public Start()
         {
@@ -24,14 +24,17 @@ namespace HSRMNoten
 
         private void btnGo_Click(object sender, EventArgs e)
         {
-            writeUserData();
-            var list = ReadHTML.parseTable(ReadHTML.navigateToGrades(tbUser.Text,tbPassword.Text));
-            if(list == null)
+            if(cbSaveUserData.Checked) writeUserData();
+            lblgetData.Visible = true;
+            var list = rbFirefox.Checked ? ReadHTML.parseTable(ReadHTML.navigateToGradesFirefox(tbUser.Text, tbPassword.Text, rbDual.Checked)) :
+                ReadHTML.parseTable(ReadHTML.navigateToGradesChrome(tbUser.Text, tbPassword.Text, rbDual.Checked));
+            if (list == null)
             {
+                lblgetData.Visible = false;
                 MessageBox.Show("Incorrect User Data");
                 return;
             }
-            var main = new MainWindow(list, tbUser.Text, tbPassword.Text);
+            var main = new MainWindow(list, tbUser.Text, tbPassword.Text, rbDual.Checked, rbFirefox.Checked);
             main.Show();
             this.Hide();           
         }
@@ -67,6 +70,48 @@ namespace HSRMNoten
         private void Start_Load(object sender, EventArgs e)
         {
             if (File.Exists(path)) readUserData();
+        }
+
+        private void rbNonDual_CheckedChanged(object sender, EventArgs e)
+        {
+            if(rbNonDual.Checked != true)
+            {
+                rbDual.Checked = true;
+                rbNonDual.Checked = false;
+            }
+            
+
+        }
+
+        private void rbDual_CheckedChanged(object sender, EventArgs e)
+        {
+            if (rbDual.Checked != true)
+            {
+                rbDual.Checked = false;
+                rbNonDual.Checked = true;
+            }
+        }
+
+        private void rbFirefox_CheckedChanged(object sender, EventArgs e)
+        {
+
+            if (rbFirefox.Checked != true)
+            {
+                rbChrome.Checked = true;
+                rbFirefox.Checked = false;
+            }
+
+        }
+
+        private void rbChrome_CheckedChanged(object sender, EventArgs e)
+        {
+
+            if (rbChrome.Checked != true)
+            {
+                rbChrome.Checked = false;
+                rbFirefox.Checked = true;
+            }
+
         }
     }
 }
