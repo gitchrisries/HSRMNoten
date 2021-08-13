@@ -121,4 +121,7 @@
   <data name="cube_icon_191750" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\cube_icon_191750.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
+  <data name="tray_icon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\1486486303-alert-bell-notification-education-christmas-bell-church-bell-ring_81235.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
+  </data>
 </root>
