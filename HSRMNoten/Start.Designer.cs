@@ -94,7 +94,6 @@ namespace HSRMNoten
             this.rbNonDual.TabStop = true;
             this.rbNonDual.Text = "AI";
             this.rbNonDual.UseVisualStyleBackColor = true;
-            this.rbNonDual.CheckedChanged += new System.EventHandler(this.rbNonDual_CheckedChanged);
             // 
             // rbDual
             // 
@@ -106,7 +105,6 @@ namespace HSRMNoten
             this.rbDual.TabIndex = 6;
             this.rbDual.Text = "AI Dual";
             this.rbDual.UseVisualStyleBackColor = true;
-            this.rbDual.CheckedChanged += new System.EventHandler(this.rbDual_CheckedChanged);
             // 
             // rbFirefox
             // 
@@ -119,7 +117,6 @@ namespace HSRMNoten
             this.rbFirefox.TabStop = true;
             this.rbFirefox.Text = "FireFox";
             this.rbFirefox.UseVisualStyleBackColor = true;
-            this.rbFirefox.CheckedChanged += new System.EventHandler(this.rbFirefox_CheckedChanged);
             // 
             // rbChrome
             // 
@@ -133,7 +130,6 @@ namespace HSRMNoten
             this.rbChrome.TabStop = true;
             this.rbChrome.Text = "Chrome";
             this.rbChrome.UseVisualStyleBackColor = true;
-            this.rbChrome.CheckedChanged += new System.EventHandler(this.rbChrome_CheckedChanged);
             // 
             // panel1
             // 

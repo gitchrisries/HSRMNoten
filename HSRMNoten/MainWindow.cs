@@ -18,25 +18,27 @@ namespace HSRMNoten
         List<List<string>> list;
         string user;
         string pw;
-        int i = 0;
+        int i;
         int rowCount;
-        bool begin;
         bool dual;
         bool firefox;
+        Dictionary<string,string> map;
 
-        public MainWindow(List<List<string>> list, string user, string pw, bool dual, bool firefox)
+        public MainWindow(List<List<string>> list, string user, string pw, bool dual, bool firefox, int rowCount)
         {
             this.list = list;
             this.user = user;
             this.pw = pw;
             this.dual = dual;
             this.firefox = firefox;
+            this.rowCount = rowCount;
             SystemEvents.PowerModeChanged += SystemEvents_PowerModeChanged;
             InitializeComponent();           
         }
 
         private void Form1_Load(object sender, EventArgs e)
-        {       
+        {
+            readUserData();
             dataGridView.ColumnCount = 3;
             dataGridView.Columns[0].Name = "Modul";
             dataGridView.Columns[1].Name = "Note";
@@ -44,6 +46,29 @@ namespace HSRMNoten
             tbSetTimer.Text = (timer1.Interval / 60000).ToString();
             btnSetTimer.Enabled = false;
             fillList();
+            if (map.ContainsKey("RowCount"))
+            {
+                UserDataIO.updateUserData(new string[] { "RowCount:" + rowCount });
+            }
+            else
+            {
+                UserDataIO.appendUserData(new string[] { "RowCount:" + rowCount });
+            }
+        }
+
+        private void readUserData()
+        {
+            map = UserDataIO.readUserData();
+            if (map.ContainsKey("TrayChecked") && map["TrayChecked"].Equals("True"))
+            {
+                cbTray.Checked = true;
+            }
+            if (map.ContainsKey("RefreshTime"))
+            {
+                tbSetTimer.Text = map["RefreshTime"];
+                timer1.Interval = Int32.Parse(tbSetTimer.Text) * 60000;
+                timer2.Interval = Int32.Parse(tbSetTimer.Text) * 60000;
+            }
         }
 
         private void fillList()
@@ -98,28 +123,61 @@ namespace HSRMNoten
         private void refresh()
         {
             dataGridView.Rows.Clear();
-            list = firefox ? ReadHTML.parseTable(ReadHTML.navigateToGradesFirefox(user, pw, dual)) : ReadHTML.parseTable(ReadHTML.navigateToGradesChrome(user, pw, dual));
-  
-            if (begin)
+            var newlist = firefox ? ReadHTML.parseTable(ReadHTML.navigateToGradesFirefox(user, pw, dual))
+                : ReadHTML.parseTable(ReadHTML.navigateToGradesChrome(user, pw, dual));
+
+            if (rowCount == 0)
             {
-                rowCount = list.Count;
-                begin = false;
+                rowCount = newlist.Count;
             }
 
-            if (rowCount < list.Count)
+            if (rowCount < newlist.Count)
             {
-                MessageBox.Show("Eine neue Note wurde eingetragen.", "Neue Note",
-                    MessageBoxButtons.OK, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button1, MessageBoxOptions.DefaultDesktopOnly);
-                begin = true;
+
+                string modul = "";
+                foreach (var x in newlist)
+                {
+                    bool inList = false;
+                    foreach (var y in list)
+                    {
+                        inList = inList || x[0].Equals(y[0]);
+                    }
+                    if (!inList)
+                    {
+                        modul = x[1];
+                        break;
+                    }
+                }
+
+                MessageBox.Show(new Form { TopMost = true }, "Neue Note für das Modul " + modul + ".",
+                    "Neue Note", MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
+                UserDataIO.updateUserData(new string[] { "RowCount:" + rowCount });
+                rowCount = newlist.Count;
             }
 
+            list = newlist;
             fillList();
+
         }
 
         private void MainWindow_FormClosing(object sender, FormClosingEventArgs e)
         {
+            string trayChecked = cbTray.Checked ? "True" : "False";
+            string refreshTime = timer1.Interval / 60000 + "";
+
+            if (map.ContainsKey("RefreshTime"))
+            {
+                UserDataIO.updateUserData(new string[] { "TrayChecked:" + trayChecked, "RefreshTime:" + refreshTime });
+            }
+            else
+            {
+                UserDataIO.appendUserData(new string[] { "TrayChecked:" + trayChecked, "RefreshTime:" + refreshTime });
+                map = UserDataIO.readUserData();
+            }
+
             Application.Exit();
         }
+
 
 
         private void timer1_Tick(object sender, EventArgs e)
@@ -149,6 +207,7 @@ namespace HSRMNoten
             timer1.Interval = Int32.Parse(tbSetTimer.Text) * 60000;
             timer2.Interval = Int32.Parse(tbSetTimer.Text) * 60000;
         }
+
 
 
         private void MainWindow_Resize(object sender, EventArgs e)
@@ -181,8 +240,8 @@ namespace HSRMNoten
             }
             else if (e.Mode == PowerModes.Resume)
             {
-                timer1.Start();
                 timer2.Start();
+                timer1.Start();
             }
         }
     }

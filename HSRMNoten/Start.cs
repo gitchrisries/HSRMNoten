@@ -14,8 +14,9 @@ namespace HSRMNoten
 {
     public partial class Start : Form
     {
-
+        Dictionary<string, string> map;
         string path = Environment.CurrentDirectory + "\\userdata.txt";
+        int rowCount;
 
         public Start()
         {
@@ -24,7 +25,46 @@ namespace HSRMNoten
 
         private void btnGo_Click(object sender, EventArgs e)
         {
-            if(cbSaveUserData.Checked) writeUserData();
+            if(cbSaveUserData.Checked) 
+            {
+                string studiengang;
+                studiengang = rbDual.Checked ? "AIDual" : "AI";
+                string browser;
+                browser = rbChrome.Checked ? "Chrome" : "Firefox";
+                if (File.Exists(path) && map.ContainsKey("User"))
+                {
+                    UserDataIO.updateUserData(new string[] { "User:" + tbUser.Text, "PW:" + tbPassword.Text,
+                "Studiengang:" + studiengang, "Browser:" + browser, "SaveChecked:True"});
+                }
+                else
+                {
+                    UserDataIO.writeNewUserData(new string[] { "User:" + tbUser.Text, "PW:" + tbPassword.Text,
+                "Studiengang:" + studiengang, "Browser:" + browser, "SaveChecked:True", "RefreshTime:" + map["RefreshTime"],
+                    "TrayChecked:" + map["TrayChecked"]});
+                }
+
+            }
+            else
+            {
+                string studiengang;
+                studiengang = rbDual.Checked ? "AIDual" : "AI";
+                string browser;
+                browser = rbChrome.Checked ? "Chrome" : "Firefox";
+                if (map != null && map.ContainsKey("TrayChecked"))
+                {
+                    UserDataIO.writeNewUserData(new string[] { "SaveChecked:False", "RowCount:" + rowCount ,
+                    "TrayChecked:" + map["TrayChecked"], "RefreshTime:" + map["RefreshTime"],
+                    "Studiengang:" + studiengang, "Browser:" + browser});
+                }
+                else
+                {
+                    UserDataIO.writeNewUserData(new string[] { "SaveChecked:False", "RowCount:" + rowCount ,
+                    "Studiengang:" + studiengang, "Browser:" + browser});
+                }
+                
+                
+            }
+
             lblgetData.Visible = true;
             var list = rbFirefox.Checked ? ReadHTML.parseTable(ReadHTML.navigateToGradesFirefox(tbUser.Text, tbPassword.Text, rbDual.Checked)) :
                 ReadHTML.parseTable(ReadHTML.navigateToGradesChrome(tbUser.Text, tbPassword.Text, rbDual.Checked));
@@ -34,7 +74,7 @@ namespace HSRMNoten
                 MessageBox.Show("Incorrect User Data");
                 return;
             }
-            var main = new MainWindow(list, tbUser.Text, tbPassword.Text, rbDual.Checked, rbFirefox.Checked);
+            var main = new MainWindow(list, tbUser.Text, tbPassword.Text, rbDual.Checked, rbFirefox.Checked, rowCount);
             main.Show();
             this.Hide();           
         }
@@ -44,74 +84,44 @@ namespace HSRMNoten
             Application.Exit();
         }
 
-        private void writeUserData()
-        {
-            string userData = tbUser.Text + "\n" + tbPassword.Text;
-            File.WriteAllText(path, userData);
-        }
-
-        private void readUserData()
-        {
-            var list = new List<string>();
-            
-            using (StreamReader sr = new StreamReader(path))
-            {
-                string line;
-                while ((line = sr.ReadLine()) != null)
-                {
-                    list.Add(line);
-                }
-            }
-
-            tbUser.Text = list[0];
-            tbPassword.Text = list[1];
-        }
-
         private void Start_Load(object sender, EventArgs e)
         {
-            if (File.Exists(path)) readUserData();
-        }
-
-        private void rbNonDual_CheckedChanged(object sender, EventArgs e)
-        {
-            if(rbNonDual.Checked != true)
+            if (File.Exists(path))
             {
-                rbDual.Checked = true;
-                rbNonDual.Checked = false;
-            }
-            
+                map = UserDataIO.readUserData();
 
+                if (map["SaveChecked"].Equals("True"))
+                {
+                    cbSaveUserData.Checked = true;
+
+                }
+                if (map.ContainsKey("User")) tbUser.Text = map["User"];
+                if (map.ContainsKey("PW")) tbPassword.Text = map["PW"];
+
+                if (map.ContainsKey("Studiengang") && map["Studiengang"].Equals("AI"))
+                {
+                    rbNonDual.Checked = true;
+                    rbDual.Checked = false;
+                }
+                else
+                {
+                    rbNonDual.Checked = false;
+                    rbDual.Checked = true;
+                }
+                if (map.ContainsKey("Browser") && map["Browser"].Equals("Chrome"))
+                {
+                    rbChrome.Checked = true;
+                    rbFirefox.Checked = false;
+                }
+                else
+                {
+                    rbFirefox.Checked = true;
+                    rbChrome.Checked = false;
+                }
+                rowCount = Int32.Parse(map["RowCount"]);
+
+            }           
         }
 
-        private void rbDual_CheckedChanged(object sender, EventArgs e)
-        {
-            if (rbDual.Checked != true)
-            {
-                rbDual.Checked = false;
-                rbNonDual.Checked = true;
-            }
-        }
-
-        private void rbFirefox_CheckedChanged(object sender, EventArgs e)
-        {
-
-            if (rbFirefox.Checked != true)
-            {
-                rbChrome.Checked = true;
-                rbFirefox.Checked = false;
-            }
-
-        }
-
-        private void rbChrome_CheckedChanged(object sender, EventArgs e)
-        {
-
-            if (rbChrome.Checked != true)
-            {
-                rbChrome.Checked = false;
-                rbFirefox.Checked = true;
-            }
-
-        }
     }
 }
