@@ -10,7 +10,7 @@ namespace HSRMNoten.Classes
 {
     public class UserDataIO
     {
-        static string path = Environment.CurrentDirectory + "\\userdata.txt";
+        static string path = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config.txt");
 
         public static void appendUserData(string[] data)
         {

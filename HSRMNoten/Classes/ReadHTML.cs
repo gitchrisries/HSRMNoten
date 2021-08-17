@@ -22,7 +22,7 @@ namespace HSRMNoten.Classes
         public static HtmlDocument navigateToGradesFirefox(string user, string pw, bool dual)
         {
 
-                string geckoDriverDirectory = Environment.CurrentDirectory;
+                string geckoDriverDirectory = AppDomain.CurrentDomain.BaseDirectory;
                 var geckoService = FirefoxDriverService.CreateDefaultService(geckoDriverDirectory);
                 geckoService.Host = "::1";
                 var firefoxOptions = new FirefoxOptions();
@@ -108,7 +108,7 @@ namespace HSRMNoten.Classes
         public static HtmlDocument navigateToGradesChrome(string user, string pw, bool dual)
         {
 
-            string geckoDriverDirectory = Environment.CurrentDirectory;
+            string geckoDriverDirectory = AppDomain.CurrentDomain.BaseDirectory;
             var geckoService = ChromeDriverService.CreateDefaultService(geckoDriverDirectory);
             var chromeOptions = new ChromeOptions();
             chromeOptions.AddArgument("-headless");
